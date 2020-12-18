@@ -8,33 +8,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>websocket网页客户端</title>
+  <title>多人聊天室web客户端</title>
+  <script src="https://cdn.staticfile.org/vue/2.6.11/vue.min.js"></script>
 </head>
 <body>
-  <button type="button" id="app">关闭ws</button>
+  <div id="app">
+    <div v-if="isShow">
+      <p>昵称：<input type="text" v-model="name"></p>
+      <p>房间号：<input type="text" v-model="roomid"></p>
+      <button type="button" @click="enter">进入聊天室</button>
+    </div>
+    <div v-else>
+      <ul>
+        <li v-for="(item,index) in lists" :key="'message' + index">{{item}}</li>
+        <li>当前房间号：{{roomid}} --- 在线人数：{{num}}</li>
+      </ul>
+      <div class="ctrl">
+        <input type="text" v-model="message">
+        <button type="button" @click="send">发送消息</button>
+      </div>
+    </div>
+  </div>
   <script>
-    var ws = new WebSocket('ws://127.0.0.1:3000')
-    ws.onopen = function open() {
-      console.log('open:' + ws.readyState) // 1
-      ws.send('this message is from html')
-    }
-    ws.onmessage = function message(event) {
-      console.log('message:' + ws.readyState) // 1
-      // 服务端发给网页的是一个MessageEvent对象，data才是需要的msg
-      console.log(event.data)
-    }
-    // 连接主动断开的时候触发
-    ws.onclose = function close() {
-      console.log('close:' + ws.readyState) // 3
-      console.log('已关闭websocket');
-    }
-    // 连接失败时触发
-    ws.onerror = function error() {
-      console.log('error:' + ws.readyState) // 3
-      console.log('websocket连接失败');
-    }
-    document.getElementById('app').addEventListener('click', function() {
-      ws.close()
+    var app = new Vue({
+      el: '#app',
+      data: {
+        isShow: true,
+        message: '',
+        ws: {},
+        name: '',     //用户名
+        roomid: '',   //房间号
+        lists: [],    //聊天记录
+        num: 0        //房间人数
+      },
+      mounted() {},
+      methods: {
+        init() {
+          this.ws = new WebSocket('ws://127.0.0.1:3000')
+          this.ws.onopen = this.onOpen
+          this.ws.onmessage = this.onMessage
+          this.ws.onclose = this.onClose
+          this.ws.onerror = this.onError
+        },
+        onOpen: function() {
+          this.ws.send(JSON.stringify({
+            event: 'enter',
+            name: this.name,
+            roomid: this.roomid
+          }))
+        },
+        onMessage: function(event) {
+          //当用户为进入聊天室之前不接受数据
+          if (this.isShow) {
+            return
+          }
+          var obj = JSON.parse(event.data) 
+          switch (obj.event) {
+            case 'enter':
+              this.lists.push('欢迎：' + obj.name + '进入聊天室！')
+              break;
+            case 'out': 
+              this.lists.push(obj.name + '已经退出了聊天室')
+              break;
+            default:
+              if (obj.name !== this.name) {
+                //接受非自己的聊天记录
+                this.lists.push(obj.name + '：' + obj.message)
+              }
+              break;
+          }
+          this.num = obj.num
+        },
+        // 进入聊天室
+        enter: function() {
+          if (this.name.trim() === '') {
+            alert('用户名不得为空')
+            return
+          }
+          this.init()
+          this.isShow = false
+        },
+        // 发送消息
+        send: function() {
+          this.lists.push(this.name + '：' + this.message)
+          this.ws.send(JSON.stringify({
+            event: 'message',
+            message: this.message,
+            name: this.name
+          }))
+          this.message = ''
+        },
+        onClose: function() {
+          // 当链接主动断开的时候触发close事件
+          console.log('close:' + this.ws.readyState);
+          console.log('已关闭websocket');
+          this.ws.close()
+        },
+        onError: function() {
+          console.log('error:' + this.ws.readyState);
+          console.log('websocket连接失败！');
+        }
+      }
     })
   </script>
 </body>
