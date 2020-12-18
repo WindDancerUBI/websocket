@@ -1,8 +1,4 @@
 <!--
- * @file: 文件描述
- * @author: huangjitao
--->
-<!--
  * @file: websocket 网页端
  * @author: huangjitao
 -->
@@ -15,15 +11,31 @@
   <title>websocket网页客户端</title>
 </head>
 <body>
+  <button type="button" id="app">关闭ws</button>
   <script>
     var ws = new WebSocket('ws://127.0.0.1:3000')
     ws.onopen = function open() {
+      console.log('open:' + ws.readyState) // 1
       ws.send('this message is from html')
     }
     ws.onmessage = function message(event) {
+      console.log('message:' + ws.readyState) // 1
       // 服务端发给网页的是一个MessageEvent对象，data才是需要的msg
       console.log(event.data)
     }
+    // 连接主动断开的时候触发
+    ws.onclose = function close() {
+      console.log('close:' + ws.readyState) // 3
+      console.log('已关闭websocket');
+    }
+    // 连接失败时触发
+    ws.onerror = function error() {
+      console.log('error:' + ws.readyState) // 3
+      console.log('websocket连接失败');
+    }
+    document.getElementById('app').addEventListener('click', function() {
+      ws.close()
+    })
   </script>
 </body>
 </html>
