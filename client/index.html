@@ -1,4 +1,8 @@
 <!--
+ * @file: 文件描述
+ * @author: huangjitao
+-->
+<!--
  * @file: websocket 网页端
  * @author: huangjitao
 -->
@@ -13,6 +17,13 @@
 <body>
   <script>
     var ws = new WebSocket('ws://127.0.0.1:3000')
+    ws.onopen = function open() {
+      ws.send('this message is from html')
+    }
+    ws.onmessage = function message(event) {
+      // 服务端发给网页的是一个MessageEvent对象，data才是需要的msg
+      console.log(event.data)
+    }
   </script>
 </body>
 </html>

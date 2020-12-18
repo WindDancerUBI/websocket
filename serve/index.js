@@ -1,4 +1,8 @@
 /*
+ * @file: 文件描述
+ * @author: huangjitao
+ */
+/*
  * @file: websocket服务端
  * @author: huangjitao
  */
@@ -8,5 +12,11 @@ const WebSocket = require('ws')
 const wss = new WebSocket.Server({port: 3000})
 
 wss.on('connection', function connection(ws) {
-  console.log('a client is connected');
+  console.log('one client is connected');
+  // 接受客户端的消息
+  ws.on('message', function(msg) {
+    console.log(msg);
+  })
+  // 主动给客户端发送消息
+  ws.send('this message is from server!')
 })
