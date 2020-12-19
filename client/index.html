@@ -51,19 +51,27 @@
           this.ws.onerror = this.onError
         },
         onOpen: function() {
+          // 发起鉴权请求
           this.ws.send(JSON.stringify({
-            event: 'enter',
-            name: this.name,
-            roomid: this.roomid
+            event: 'auth',
+            message: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Imh1YW5naml0YW8iLCJpYXQiOjE1MTYyMzkwMjJ9.-A4O4moqP8zc97GqtE1IgpFOcXI0Tpk_ExzjAt-qzx8'
           }))
         },
         onMessage: function(event) {
-          //当用户为进入聊天室之前不接受数据
-          if (this.isShow) {
-            return
-          }
           var obj = JSON.parse(event.data) 
           switch (obj.event) {
+            case 'auth':
+              if (obj.isAuth) {
+                this.ws.send(JSON.stringify({
+                  event: 'enter',
+                  name: this.name,
+                  roomid: this.roomid
+                }))
+                this.isShow = false
+              } else {
+                alert(obj.message)
+              }
+              break;
             case 'enter':
               this.lists.push('欢迎：' + obj.name + '进入聊天室！')
               break;
@@ -86,7 +94,6 @@
             return
           }
           this.init()
-          this.isShow = false
         },
         // 发送消息
         send: function() {
