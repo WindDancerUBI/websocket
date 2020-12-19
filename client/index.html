@@ -20,8 +20,8 @@
     </div>
     <div v-else>
       <ul>
-        <li v-for="(item,index) in lists" :key="'message' + index">{{item}}</li>
         <li>当前房间号：{{roomid}} --- 在线人数：{{num}}</li>
+        <li v-for="(item,index) in lists" :key="'message' + index">{{item}}</li>
       </ul>
       <div class="ctrl">
         <input type="text" v-model="message">
@@ -78,6 +78,13 @@
             case 'out': 
               this.lists.push(obj.name + '已经退出了聊天室')
               break;
+            case 'heartbeat':
+              this.checkServer()
+              this.ws.send(JSON.stringify({
+                event: 'heartbeat',
+                message: 'pong'
+              }))
+              break;
             default:
               if (obj.name !== this.name) {
                 //接受非自己的聊天记录
@@ -114,6 +121,17 @@
         onError: function() {
           console.log('error:' + this.ws.readyState);
           console.log('websocket连接失败！');
+        },
+        checkServer: function () {
+          var _this = this
+          clearTimeout(this.handle)
+          this.handle = setTimeout(function () {
+            _this.onClose()
+            setTimeout(function () {
+              _this.init()
+            }, 1000)
+            // 设置1ms的时延，调试在服务器测未及时响应时，客户端的反应
+          }, 30000 + 1000)
         }
       }
     })
