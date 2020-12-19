@@ -3,9 +3,12 @@
  * @author: huangjitao
  */
 const WebSocket = require('ws')
+const http = require('http')
 
 // 创建websocket服务端
-const wss = new WebSocket.Server({port: 3000})
+// const wss = new WebSocket.Server({port: 3000})
+const server = http.createServer() 
+const wss = new WebSocket.Server({noServer: true})
 
 let group = {} // 存放每个房间的在线人数
 wss.on('connection', function connection(ws) {
@@ -50,3 +53,20 @@ wss.on('connection', function connection(ws) {
     })
   })
 })
+
+server.on('upgrade', function upgrade(request, socket, head) {
+  // This function is not defined on purpose. Implement it with your own logic.
+  // authenticate(request, (err, client) => {
+  //   if (err || !client) {
+  //     socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+  //     socket.destroy();
+  //     return;
+  //   }
+    console.log('request:' +  JSON.stringify(request, null, 2))
+    wss.handleUpgrade(request, socket, head, function done(ws) {
+      wss.emit('connection', ws, request);
+    });
+  // });
+});
+
+server.listen(3000); 
